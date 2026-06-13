@@ -211,7 +211,7 @@ public function getStatus(): string {
 
 ```bash
 grep -n 'Filament::getTenant()->id' arquivo.php
-grep -n 'FormatterHelper::money' arquivo.php
+grep -n 'Number::currency\|number_format' arquivo.php
 ```
 ```php
 // ❌ Mesma query em 3 lugares
@@ -391,9 +391,11 @@ FileUpload::make('attachment')->disk('r2')->visibility('public');
 ```php
 // ❌ number_format($value, 2, ',', '.')
 // ✅
-FormatterHelper::money($value, currency: true)   // R$ 1.234,56
-FormatterHelper::money($value, currency: false)  // 1.234,56
-FormatterHelper::money($value) . '%'             // 12,50%
+use Illuminate\Support\Number;
+
+Number::currency($value, 'BRL')                          // R$ 1.234,56
+number_format($value, 2, ',', '.')                       // 1.234,56
+number_format($value, 2, ',', '.') . '%'                 // 12,50%
 ```
 
 ### 3.4 Enums
@@ -567,6 +569,6 @@ DB::transaction(function () use ($data): void {
 - [ ] Constructor property promotion
 - [ ] `casts()` como método
 - [ ] Namespaces Filament v5 corretos
-- [ ] `FormatterHelper::money()` pra formatação
+- [ ] `Number::currency()` pra formatação monetária
 - [ ] Enum cases TitleCase
 - [ ] Eager loading em loops com relações

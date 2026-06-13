@@ -120,18 +120,20 @@ $record->person->name
 $record->person?->name
 ```
 
-### 3. FormatterHelper::money() retornando valor errado
+### 3. Formatação monetária retornando valor errado
 
-**Causa:** `FormatterHelper::toDecimal()` não foi chamado antes de `money()`, ou `money()` recebeu string pt-BR com vírgula.
+**Causa:** O valor não foi convertido de string pt-BR (com vírgula) para float antes de formatar.
 
 **Solução:**
 ```php
-// ERRADO — passa string pt-BR direto para money()
-$set('total', FormatterHelper::money($get('unit_price')));
+use Illuminate\Support\Number;
+
+// ERRADO — passa string pt-BR direto para Number::currency()
+$set('total', Number::currency((float) $get('unit_price'), 'BRL'));
 
 // CORRETO — converte para decimal primeiro
-$unitPrice = FormatterHelper::toDecimal($get('unit_price'));
-$set('total', FormatterHelper::money($unitPrice * $qty));
+$unitPrice = (float) str_replace(['.', ','], ['', '.'], $get('unit_price'));
+$set('total', Number::currency($unitPrice * $qty, 'BRL'));
 ```
 
 ### 4. Multi-tenancy: dados de outro tenant visíveis

@@ -57,7 +57,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Exports;
 
-use App\Helpers\FormatterHelper;
 use App\Models\MyModel;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
@@ -75,7 +74,7 @@ final class MyModelExporter extends Exporter
             ExportColumn::make('name')->label('Nome'),
             ExportColumn::make('amount')
                 ->label('Valor (R$)')
-                ->formatStateUsing(fn ($state) => FormatterHelper::money((float) $state, currency: false)),
+                ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', '.')),
             ExportColumn::make('due_date')
                 ->label('Vencimento')
                 ->formatStateUsing(fn ($state) => $state?->format('d/m/Y')),
@@ -292,7 +291,6 @@ Route::middleware(['auth'])->prefix('my-model')->name('my-model.')->group(functi
 </head>
 <body>
     @php
-        use App\Helpers\FormatterHelper;
         $tenantAddress = $tenant?->addresses?->first() ?? null;
         $tenantPhone = $tenant?->phones?->first() ?? null;
         $tenantEmail = $tenant?->emails?->first() ?? null;
@@ -314,18 +312,18 @@ Route::middleware(['auth'])->prefix('my-model')->name('my-model.')->group(functi
             </td>
             <td width="50%" class="border-right">
                 <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">{{ $tenant?->name ?? 'Empresa' }}</div>
-                @if($tenant?->document)<div class="info-value"><span class="info-label">CNPJ/CPF:</span> {{ FormatterHelper::cpfCnpj($tenant->document) }}</div>@endif
+                @if($tenant?->document)<div class="info-value"><span class="info-label">CNPJ/CPF:</span> {{ formatCpfCnpj($tenant->document) {{-- implement with your app's formatter --}} }}</div>@endif
                 @if($tenantAddress)
                 <div class="info-value">
                     {{ $tenantAddress->street }}{{ $tenantAddress->number ? ', ' . $tenantAddress->number : '' }}
                     {{ $tenantAddress->complement ? ' - ' . $tenantAddress->complement : '' }}<br>
                     {{ $tenantAddress->district }}
                     @if($tenantAddress->city && $tenantAddress->state) - {{ $tenantAddress->city }}/{{ $tenantAddress->state }} @endif
-                    @if($tenantAddress->postal_code) - CEP: {{ FormatterHelper::cep($tenantAddress->postal_code) }} @endif
+                    @if($tenantAddress->postal_code) - CEP: {{ formatCep($tenantAddress->postal_code) {{-- implement with your app's formatter --}} }} @endif
                 </div>
                 @endif
                 <div class="info-value">
-                    @if($tenantPhone)<span class="info-label">Tel:</span> {{ FormatterHelper::phone($tenantPhone->number) }} @endif
+                    @if($tenantPhone)<span class="info-label">Tel:</span> {{ formatPhone($tenantPhone->number) {{-- implement with your app's formatter --}} }} @endif
                     @if($tenantEmail) <br><span class="info-label">Email:</span> {{ $tenantEmail->address }} @endif
                 </div>
             </td>
@@ -355,7 +353,7 @@ Route::middleware(['auth'])->prefix('my-model')->name('my-model.')->group(functi
                 <tr>
                     <td>{{ $record->field1 ?? 'N/A' }}</td>
                     <td class="text-center">{{ $record->field2 ?? '-' }}</td>
-                    <td class="text-right font-bold">{{ FormatterHelper::money($record->amount, currency: true) }}</td>
+                    <td class="text-right font-bold">{{ \Illuminate\Support\Number::currency($record->amount, 'BRL') }}</td>
                     <td class="text-center">
                         @php
                             $isPaid = $record->status?->value === 1;
@@ -379,7 +377,7 @@ Route::middleware(['auth'])->prefix('my-model')->name('my-model.')->group(functi
             <table width="100%" cellpadding="4" cellspacing="0" style="font-size: 11px;">
                 <tr class="total-row">
                     <td width="60%" class="text-right" style="font-size: 12px; background-color: #e0e0e0;">TOTAL:</td>
-                    <td width="40%" class="text-right" style="font-size: 12px; background-color: #e0e0e0;">{{ FormatterHelper::money($totalAmount, currency: true) }}</td>
+                    <td width="40%" class="text-right" style="font-size: 12px; background-color: #e0e0e0;">{{ \Illuminate\Support\Number::currency($totalAmount, 'BRL') }}</td>
                 </tr>
             </table>
         </div>

@@ -453,18 +453,18 @@ Namespace `Filament\Actions\`:
 
 ## Money Formatting
 
-**OBRIGATÓRIO `FormatterHelper`** — nunca `number_format()` direto.
+**OBRIGATÓRIO formatação consistente** — nunca `number_format()` direto.
 
 ```php
-use App\Helpers\FormatterHelper;
+use Illuminate\Support\Number;
 
 // ❌ number_format($value, 2, ',', '.')
 // ✅
-FormatterHelper::money($value, currency: true)   // "R$ 1.234,56"
-FormatterHelper::money($value, currency: false)  // "1.234,56"
-FormatterHelper::money($value, currency: false) . '%'  // "12,50%"
+Number::currency($value, 'BRL')                          // "R$ 1.234,56"
+number_format($value, 2, ',', '.')                       // "1.234,56"
+number_format($value, 2, ',', '.') . '%'                 // "12,50%"
 
-->formatStateUsing(fn ($state) => $state ? FormatterHelper::money($state, currency: true) : '—')
+->formatStateUsing(fn ($state) => $state ? Number::currency($state, 'BRL') : '—')
 ```
 
 ## TDD Obrigatório
@@ -531,4 +531,4 @@ php artisan test --compact --filter={ActionName}Test
 - `->bulkActions()` (v3) em vez de `->toolbarActions([BulkActionGroup::make([...])])` (v5)
 - Sem notificação ao final
 - Sem `->requiresConfirmation()` em destrutivas
-- `number_format()` em vez de `FormatterHelper::money()`
+- `number_format()` em vez de `Number::currency()`

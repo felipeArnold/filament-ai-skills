@@ -171,7 +171,7 @@ Excluir: `::query()`, `::factory()`, `::class`, `::make()`, `::observe()`.
   - Actions: `Filament\Actions\`
   - Icons: `Filament\Support\Icons\Heroicon`
 - `protected string $view` (não `protected static string $view`) em Pages
-- Formatação de valores monetários: usar `FormatterHelper::money()` (não `number_format`)
+- Formatação de valores monetários: usar `Number::currency()` (não `number_format`)
 - File uploads: `->visibility('public')` se acesso público
 
 #### 4.4 Jobs e Filas
@@ -371,7 +371,7 @@ Executar sempre. Nunca commitar código não formatado.
 #### 7.3 Duplicação
 
 - Verificar se existe helper, trait, ou método similar antes de criar novo
-- `FormatterHelper` para formatação de valores
+- `Number::currency()` para formatação de valores monetários
 - Reutilizar factories e states existentes nos testes
 
 #### 7.4 PHPDoc

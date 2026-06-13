@@ -93,11 +93,13 @@ TextEntry::make('status')
     ->color(fn (StatusEnum $state): string => $state->getColor()),
 ```
 
-### Valor monetário (usando FormatterHelper)
+### Valor monetário
 ```php
+use Illuminate\Support\Number;
+
 TextEntry::make('total_value')
     ->label('Total')
-    ->formatStateUsing(fn ($state) => FormatterHelper::money((float) $state, currency: true))
+    ->formatStateUsing(fn ($state) => Number::currency((float) $state, 'BRL'))
     ->weight('bold')
     ->size(TextSize::Large)
     ->color('success'),
@@ -144,7 +146,7 @@ TextEntry::make('vehicle_info')
 ```php
 TextEntry::make('document')
     ->label('CPF / CNPJ')
-    ->formatStateUsing(fn ($state) => $state ? FormatterHelper::cpfCnpj($state) : '—'),
+    ->formatStateUsing(fn ($state) => $state ? formatCpfCnpj($state) : '—'), // implement with your app's formatter
 
 TextEntry::make('mileage')
     ->label('Km')
@@ -188,7 +190,7 @@ RepeatableEntry::make('serviceOrderServices')
         TextEntry::make('quantity')->label('Qtd')->alignCenter(),
         TextEntry::make('total')
             ->label('Total')
-            ->formatStateUsing(fn ($state) => FormatterHelper::money((float) $state, currency: true))
+            ->formatStateUsing(fn ($state) => Number::currency((float) $state, 'BRL'))
             ->color('success'),
     ])
     ->columns(3)
@@ -289,12 +291,14 @@ Na página `ViewRecord`, o infolist é renderizado automaticamente.
 **NUNCA usar** `->money('BRL')` diretamente (não formata em pt-BR). Usar sempre:
 
 ```php
-->formatStateUsing(fn ($state) => FormatterHelper::money((float) $state, currency: true))
+use Illuminate\Support\Number;
+
+->formatStateUsing(fn ($state) => Number::currency((float) $state, 'BRL'))
 ```
 
 Para exibir sem símbolo `R$`:
 ```php
-->formatStateUsing(fn ($state) => FormatterHelper::money((float) $state, currency: false) . '%')
+->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', '.') . '%')
 ```
 
 ---
@@ -309,5 +313,5 @@ Para exibir sem símbolo `R$`:
 - Usar `->html()` nos campos vindos de `RichEditor`
 - Usar `->badge()` + `->color()` para Enums com `HasColor`
 - Usar `->state()` para campos calculados (não persistidos)
-- Nunca usar `->money('BRL')` — sempre `FormatterHelper::money()`
+- Nunca usar `->money('BRL')` — sempre `Number::currency()`
 - **Nunca usar `Split`** — não existe em `Filament\Schemas\Components\`, use `Grid::make(N)`
