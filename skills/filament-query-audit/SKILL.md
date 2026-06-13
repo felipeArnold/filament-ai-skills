@@ -33,7 +33,7 @@ php artisan filament:query-audit --severity=error
 php artisan filament:query-audit
 
 # Filtrar por resource/feature específica
-php artisan filament:query-audit --filter=ServiceOrder
+php artisan filament:query-audit --filter=Order
 php artisan filament:query-audit --filter=Product
 
 # Saída JSON para processar programaticamente
@@ -130,7 +130,7 @@ TextColumn::make('signers_count')  // Eloquent gera este atributo automaticament
 ```php
 // ❌ Problema
 TextColumn::make('status_label')
-    ->state(fn (ServiceOrder $record): string => $record->person->name ?? '—'),
+    ->state(fn (Order $record): string => $record->person->name ?? '—'),
 
 // ✅ Fix — eager load + acesso direto (ou usar dot notation)
 ->modifyQueryUsing(fn ($query) => $query->with(['person:id,name']))
@@ -169,7 +169,7 @@ public static function getEloquentQuery(): Builder
 }
 ```
 
-> Ver `.claude/rules/multi-tenancy.md` para lista de models com/sem ScopedToTenant.
+> Verificar quais models do seu projeto possuem tenant scope global antes de corrigir.
 
 ---
 
@@ -224,14 +224,14 @@ TextColumn::make('person.name')->searchable(),  // sem ->sortable()
 // ❌ Problema
 protected function getStats(): array
 {
-    $orders = ServiceOrder::query()->where('status', 'in_progress')->get();
+    $orders = Order::query()->where('status', 'in_progress')->get();
     return $orders->map(fn ($order) => $order->person->name)->toArray(); // N+1
 }
 
 // ✅ Fix
 protected function getStats(): array
 {
-    $orders = ServiceOrder::query()
+    $orders = Order::query()
         ->where('status', 'in_progress')
         ->with(['person:id,name'])
         ->get();
@@ -277,4 +277,4 @@ php artisan test --compact --filter=ResourceTest
 
 - Após corrigir erros de tenant: rodar `pre-commit-review` para validar o diff
 - Para telas que ainda estão lentas após os fixes: usar `query-performance-audit` (EXPLAIN em runtime)
-- Para confirmar que eager loads eliminaram N+1: escrever teste com `DB::getQueryLog()` (ver `.claude/rules/n-plus-one.md`)
+- Para confirmar que eager loads eliminaram N+1: escrever teste com `DB::getQueryLog()`

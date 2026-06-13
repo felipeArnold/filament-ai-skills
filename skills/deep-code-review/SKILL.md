@@ -67,14 +67,14 @@ grep -rn 'getRecord\|record' arquivo.php | grep -v 'null\|?\|test'
 Verificar em cada Action/Controller: ownership (`$record->tenant_id === Filament::getTenant()->id`), policies aplicadas, Filament resources com `canAccess()/canView()/canEdit()`.
 
 ```php
-// ❌ $order = ServiceOrder::find($id);
+// ❌ $order = Order::find($id);
 // ✅
-$order = ServiceOrder::query()
+$order = Order::query()
     ->where('tenant_id', Filament::getTenant()->id)
     ->findOrFail($id);
 ```
 
-**Antes de marcar vazamento de tenant** (evita falso-positivo): checar se o model tem trait `ScopedToTenant` (`TenantScope` global). Se tem e roda em painel → já filtrado, não é finding. Vazamento real só em: model SEM scope (`User`, `Vehicle`, `Warranty`...), contexto tenant null (Job/Webhook/API/Admin), ou `withoutGlobalScopes()` sem where manual. Detalhes: `.claude/rules/multi-tenancy.md`.
+**Antes de marcar vazamento de tenant** (evita falso-positivo): checar se o model tem seu trait de tenant scope (`TenantScope` global). Se tem e roda em painel → já filtrado, não é finding. Vazamento real só em: model SEM scope (`User`, `Product`...), contexto tenant null (Job/Webhook/API/Admin), ou `withoutGlobalScopes()` sem where manual.
 
 **Exposição de Dados Sensíveis:**
 ```bash
@@ -140,13 +140,13 @@ grep -c 'public function' arquivo.php   # >10 → avaliar divisão
 ```
 ```php
 // ❌ Model com responsabilidades demais
-class ServiceOrder extends Model {
+class Order extends Model {
     public function generatePdf(): string { ... }
     public function sendEmail(): void { ... }
     public function calculateTax(): float { ... }
 }
 // ✅ Model focado em domínio
-class ServiceOrder extends Model {
+class Order extends Model {
     public function isCompleted(): bool { ... }
     public function markAsCompleted(): void { ... }
     public function scopePending(Builder $q): Builder { ... }
@@ -155,14 +155,14 @@ class ServiceOrder extends Model {
 
 **OCP** — sinal: `if/elseif` crescentes pra cada novo caso.
 ```php
-// ❌ if ($this->type === 'service_order') return 'heroicon-o-wrench';
+// ❌ if ($this->type === 'order') return 'heroicon-o-wrench';
 // ✅ Extensível via Enum
-enum CommissionType: string {
-    case ServiceOrder = 'service_order';
+enum InvoiceType: string {
+    case Order = 'order';
     case Sale = 'sale';
     public function icon(): string {
         return match($this) {
-            self::ServiceOrder => 'heroicon-o-wrench',
+            self::Order => 'heroicon-o-wrench',
             self::Sale => 'heroicon-o-shopping-cart',
         };
     }
@@ -215,16 +215,16 @@ grep -n 'Number::currency\|number_format' arquivo.php
 ```
 ```php
 // ❌ Mesma query em 3 lugares
-Commission::query()->where('tenant_id', Filament::getTenant()->id)->where('status', 'pending');
+Invoice::query()->where('tenant_id', Filament::getTenant()->id)->where('status', 'pending');
 
 // ✅ Scopes nomeados
 public function scopePending(Builder $q): Builder {
-    return $q->where('status', CommissionStatusEnum::PENDING);
+    return $q->where('status', InvoiceStatusEnum::PENDING);
 }
 public function scopeForTenant(Builder $q, int $tenantId): Builder {
     return $q->where('tenant_id', $tenantId);
 }
-// Commission::query()->forTenant($tenantId)->pending()->get();
+// Invoice::query()->forTenant($tenantId)->pending()->get();
 ```
 
 ### 2.4 Coesão/Acoplamento
@@ -273,19 +273,19 @@ public function __construct(
 
 // Return types em TODOS métodos
 public function isPaid(): bool { ... }
-public function getCommissions(): Collection { ... }
+public function getInvoices(): Collection { ... }
 
 // Named arguments
-$this->commission->markAsPaid(paidBy: $user);
+$this->invoice->markAsPaid(paidBy: $user);
 
 // match em vez de switch
 $label = match($this->status) {
-    CommissionStatusEnum::PENDING => 'Pendente',
-    CommissionStatusEnum::PAID => 'Pago',
+    InvoiceStatusEnum::PENDING => 'Pendente',
+    InvoiceStatusEnum::PAID => 'Pago',
 };
 
 // Nullsafe em FK nullable
-$amount = $order->commission?->commission_amount ?? 0;
+$amount = $order->invoice?->invoice_amount ?? 0;
 
 // ❌ public $name;          // sem tipo
 // ✅ public string $name;
@@ -298,9 +298,9 @@ $amount = $order->commission?->commission_amount ?? 0;
 // ✅ casts() como método
 protected function casts(): array {
     return [
-        'status' => CommissionStatusEnum::class,
+        'status' => InvoiceStatusEnum::class,
         'paid_at' => 'datetime',
-        'commission_amount' => 'decimal:2',
+        'invoice_amount' => 'decimal:2',
     ];
 }
 
@@ -311,7 +311,7 @@ public function user(): BelongsTo {
 
 // ✅ Scopes tipados
 public function scopePending(Builder $q): Builder {
-    return $q->where('status', CommissionStatusEnum::PENDING);
+    return $q->where('status', InvoiceStatusEnum::PENDING);
 }
 
 // ✅ $guarded = [] é o padrão DESTE projeto (CLAUDE.md) — não reportar como finding nem sugerir $fillable
@@ -319,14 +319,14 @@ public function scopePending(Builder $q): Builder {
 
 **Form Requests (validação separada do controller):**
 ```php
-class StoreCommissionRequest extends FormRequest {
+class StoreInvoiceRequest extends FormRequest {
     public function authorize(): bool {
-        return $this->user()->can('create', Commission::class);
+        return $this->user()->can('create', Invoice::class);
     }
     public function rules(): array {
         return [
             'user_id' => ['required', 'exists:users,id'],
-            'commission_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'invoice_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }
@@ -337,10 +337,10 @@ class StoreCommissionRequest extends FormRequest {
 grep -n 'foreach\|->each(' arquivo.php
 ```
 ```php
-// ❌ foreach ($commissions as $c) { echo $c->user->name; }
+// ❌ foreach ($invoices as $i) { echo $i->user->name; }
 // ✅
-$commissions = Commission::query()
-    ->with(['user', 'serviceOrder'])
+$invoices = Invoice::query()
+    ->with(['user', 'order'])
     ->where('tenant_id', $tenantId)
     ->get();
 ```
@@ -402,14 +402,14 @@ number_format($value, 2, ',', '.') . '%'                 // 12,50%
 
 ```php
 // Cases TitleCase
-enum ServiceOrderStatus: string {
+enum OrderStatus: string {
     case Draft = 'draft';
     case InProgress = 'in_progress';
     case Completed = 'completed';
 }
 
 // Comportamento no próprio Enum
-enum CommissionStatusEnum: string {
+enum InvoiceStatusEnum: string {
     case Pending = 'pending';
     case Paid = 'paid';
     public function label(): string {
@@ -438,9 +438,9 @@ Lógica de Enum espalhada em N arquivos com mesmo match → mover pro Enum.
 grep -n 'Model::query()\|Model::find\|Model::all\|Model::first' arquivo.php
 ```
 ```php
-// ❌ Commission::query()->where('status', 'pending')->get();
+// ❌ Invoice::query()->where('status', 'pending')->get();
 // ✅ explícito
-$commissions = Commission::query()
+$invoices = Invoice::query()
     ->where('tenant_id', Filament::getTenant()->id)
     ->where('status', 'pending')
     ->get();
@@ -459,28 +459,28 @@ protected static function booted(): void {
 
 ```php
 // ✅
-class ProcessCommissionJob implements ShouldQueue {
+class ProcessInvoiceJob implements ShouldQueue {
     public function __construct(
-        private readonly int $commissionId,
+        private readonly int $invoiceId,
         private readonly int $userId,
     ) {}
     public function handle(): void {
-        $commission = Commission::findOrFail($this->commissionId);
+        $invoice = Invoice::findOrFail($this->invoiceId);
     }
 }
-// ❌ private readonly Commission $commission   // serializa dados sensíveis
+// ❌ private readonly Invoice $invoice   // serializa dados sensíveis
 ```
 
 ### 4.3 Observers — Loops Infinitos
 
 ```php
 // ❌ Observer dispara update no mesmo model = loop
-public function updated(ServiceOrder $so): void {
-    $so->update(['notes' => 'Updated']);
+public function updated(Order $order): void {
+    $order->update(['notes' => 'Updated']);
 }
 // ✅ saveQuietly()
-public function updated(ServiceOrder $so): void {
-    $so->saveQuietly();
+public function updated(Order $order): void {
+    $order->saveQuietly();
 }
 ```
 
@@ -508,7 +508,7 @@ DB::transaction(function () use ($data): void {
 - Arquivos: X | Linhas: ~XXX | Domínio: [...]
 
 ### 🔴 Crítico — Imediato
-- [ ] [SEGURANÇA] arquivo.php:42 — SQL injection em getCommissions()
+- [ ] [SEGURANÇA] arquivo.php:42 — SQL injection em getInvoices()
 - [ ] [SEGURANÇA] arquivo.php:87 — Mass assignment sem validated() em store()
 
 ### 🟠 Importante — Sprint

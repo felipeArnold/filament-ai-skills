@@ -113,16 +113,16 @@ final class MarkAsReceivedAction extends Action
 ```php
 declare(strict_types=1);
 
-namespace App\Filament\Resources\Services\ServiceOrders\Actions;
+namespace App\Filament\Resources\Orders\Actions;
 
 use App\Enum\Template\TemplateContext;
 use App\Models\EmailTemplate;
-use App\Models\ServiceOrder;
+use App\Models\Order;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 
-final class SendServiceOrderEmailAction extends Action
+final class SendOrderEmailAction extends Action
 {
     protected function setUp(): void
     {
@@ -154,7 +154,7 @@ final class SendServiceOrderEmailAction extends Action
                 ->preload()
                 ->required()
                 ->options(fn (): array => EmailTemplate::query()
-                    ->where('context', TemplateContext::ServiceOrder->value)
+                    ->where('context', TemplateContext::Order->value)
                     ->where('is_active', true)
                     ->orderBy('name')
                     ->pluck('name', 'id')
@@ -166,7 +166,7 @@ final class SendServiceOrderEmailAction extends Action
 
     protected function execute(array $data): void
     {
-        /** @var ServiceOrder|null $record */
+        /** @var Order|null $record */
         $record = $this->getRecord();
 
         if (! $record) {
@@ -188,10 +188,10 @@ Múltiplos registros via `accessSelectedRecords()`:
 ```php
 declare(strict_types=1);
 
-namespace App\Filament\Resources\Services\ServiceOrders\Actions;
+namespace App\Filament\Resources\Orders\Actions;
 
-use App\Enum\ServiceOrderStatus;
-use App\Models\ServiceOrder;
+use App\Enum\OrderStatus;
+use App\Models\Order;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -224,7 +224,7 @@ final class UpdateStatusBulkAction extends Action
         return [
             Forms\Components\Select::make('status')
                 ->label('Status')
-                ->options(ServiceOrderStatus::toSelectArray())
+                ->options(OrderStatus::toSelectArray())
                 ->native(false)
                 ->required(),
         ];
@@ -232,7 +232,7 @@ final class UpdateStatusBulkAction extends Action
 
     protected function execute(array $data, Collection $records): void
     {
-        $records->each(fn (ServiceOrder $r) => $r->update(['status' => $data['status']]));
+        $records->each(fn (Order $r) => $r->update(['status' => $data['status']]));
 
         Notification::make()
             ->title('Status atualizado com sucesso')
@@ -250,9 +250,9 @@ Múltiplas tabelas → `DB::transaction()`:
 ```php
 declare(strict_types=1);
 
-namespace App\Filament\Resources\Services\VehicleMaintenancePlans\Actions;
+namespace App\Filament\Resources\MaintenancePlans\Actions;
 
-use App\Models\ServiceOrder;
+use App\Models\Order;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -267,7 +267,7 @@ final class CreateBudgetAction extends Action
             ->label('Criar Orcamento')
             ->icon('heroicon-o-document-text')
             ->color('success')
-            ->visible(fn ($record) => ! $record->service_order_id)
+            ->visible(fn ($record) => ! $record->order_id)
             ->requiresConfirmation()
             ->modalHeading('Criar Orcamento de Manutencao')
             ->modalDescription(fn ($record) => "Deseja criar um orcamento para '{$record->maintenanceType->name}'?")
@@ -285,13 +285,13 @@ final class CreateBudgetAction extends Action
         $record = $this->getRecord();
 
         DB::transaction(function () use ($record): void {
-            $serviceOrder = ServiceOrder::create([/* ... */]);
-            $record->update(['service_order_id' => $serviceOrder->id]);
+            $order = Order::create([/* ... */]);
+            $record->update(['order_id' => $order->id]);
 
             Notification::make()
                 ->success()
                 ->title('Orcamento criado!')
-                ->body("OS #{$serviceOrder->id} criada com sucesso.")
+                ->body("Pedido #{$order->id} criado com sucesso.")
                 ->send();
         });
     }
@@ -307,7 +307,7 @@ final class CreateBudgetAction extends Action
     ViewAction::make(),
     EditAction::make(),
     MarkAsReceivedAction::make(),
-    SendServiceOrderEmailAction::make(),
+    SendOrderEmailAction::make(),
 ])
 ```
 

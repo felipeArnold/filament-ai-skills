@@ -143,8 +143,8 @@ $set('total', Number::currency($unitPrice * $qty, 'BRL'));
 **Diagnóstico:**
 ```php
 // tinker
-Tenant::find($tenantId)->serviceOrders()->count();
-ServiceOrder::where('tenant_id', $tenantId)->count();
+Tenant::find($tenantId)->orders()->count();
+Order::where('tenant_id', $tenantId)->count();
 ```
 
 **Solução:** Verificar se o model tem global scope ou se o resource usa `->modifyQueryUsing()`.

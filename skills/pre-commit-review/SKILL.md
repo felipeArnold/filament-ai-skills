@@ -210,7 +210,7 @@ Verificar se novos arquivos estão nos locais corretos:
 - Todo model tenant-scoped deve ter relação com `Tenant`
 - Queries devem incluir `where('tenant_id', ...)` ou usar escopo global
 - Nunca expor dados entre tenants
-- `TenantScope` (trait `ScopedToTenant`) é no-op com tenant null (Job/Webhook/API/Admin) → ali filtrar manual; models sem o trait (`User`, `Vehicle`...) só protegidos por auto-scope de Resource, query raw vaza. Ver `.claude/rules/multi-tenancy.md`
+- Seu trait de tenant scope é no-op com tenant null (Job/Webhook/API/Admin) → ali filtrar manual; models sem o trait (`User`, `Product`...) só protegidos por auto-scope de Resource, query raw vaza.
 
 #### 5.3 Padrão de Integrações
 
@@ -282,7 +282,7 @@ php artisan make:test --pest --unit Unit/Models/{ModelName}Test   # unit test
 
 **Depois de criar, preencha os testes com base no código analisado:**
 
-Para **Actions Filament** (como `GenerateCommissionPayableAction`), cobrir:
+Para **Actions Filament** (como `GenerateInvoiceAction`), cobrir:
 ```php
 // Autenticar no painel antes de testar
 beforeEach(fn () => $this->actingAs($user, 'web'));

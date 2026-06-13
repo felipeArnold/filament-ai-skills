@@ -204,7 +204,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\MyModel;
-use App\Services\Pdf\PdfService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -226,13 +226,11 @@ final class MyModelsListPdfController extends Controller
 
         $fileName = 'my-model-'.now()->format('Y-m-d-His').'.pdf';
 
-        return (new PdfService())->generateStreamedResponse(
-            'pdf.my-model-list',
-            ['records' => $records, 'totalAmount' => $totalAmount, 'tenant' => $tenant],
-            $fileName,
-            'a4',
-            ['top' => 10, 'bottom' => 10, 'left' => 10, 'right' => 10]
-        );
+        return Pdf::loadView('pdf.my-model-list', [
+            'records' => $records,
+            'totalAmount' => $totalAmount,
+            'tenant' => $tenant,
+        ])->stream($fileName);
     }
 }
 ```

@@ -321,13 +321,13 @@ Não usar quando: lista vem de input sem validação de tipo, ou lista < 50 (whe
 
 ```php
 // ANTES — explode: carrega todos models p/ somar 1 campo
-$total = ServiceOrder::with('services')->get()
+$total = Order::with('services')->get()
     ->sum(fn ($o) => $o->services->sum('price'));
 
 // DEPOIS — 1 aggregate query
-$total = ServiceOrder::query()
-    ->join('service_order_services', 'service_orders.id', '=', 'service_order_services.service_order_id')
-    ->selectRaw('SUM(service_order_services.price) as total')
+$total = Order::query()
+    ->join('order_services', 'orders.id', '=', 'order_services.order_id')
+    ->selectRaw('SUM(order_services.price) as total')
     ->value('total');
 ```
 
@@ -338,10 +338,10 @@ $total = ServiceOrder::query()
 protected function getStats(): array
 {
     return [
-        Stat::make('Abertas',    ServiceOrder::where('status', 'open')->count()),
-        Stat::make('Fechadas',   ServiceOrder::where('status', 'closed')->count()),
-        Stat::make('Pendentes',  ServiceOrder::where('status', 'pending')->count()),
-        Stat::make('Faturamento', ServiceOrder::where('status', 'closed')->sum('total')),
+        Stat::make('Abertas',    Order::where('status', 'open')->count()),
+        Stat::make('Fechadas',   Order::where('status', 'closed')->count()),
+        Stat::make('Pendentes',  Order::where('status', 'pending')->count()),
+        Stat::make('Faturamento', Order::where('status', 'closed')->sum('total')),
     ];
 }
 
@@ -349,7 +349,7 @@ protected function getStats(): array
 protected function getStats(): array
 {
     $data = cache()->remember('dashboard_stats_' . auth()->id(), 60, function () {
-        return ServiceOrder::query()
+        return Order::query()
             ->selectRaw("
                 COUNT(CASE WHEN status = 'open'   THEN 1 END) as open_count,
                 COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_count,
