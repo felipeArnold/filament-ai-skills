@@ -1,0 +1,24 @@
+{
+  "name": "filament-ai-skills",
+  "description": "Complete Claude Code skills suite for Filament v5 + Laravel — resources, actions, infolists, exports, testing, performance auditing, error diagnosis, TDD, and more.",
+  "owner": {
+    "name": "Felipe Arnold",
+    "email": "felipearnold94@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "filament-ai-skills",
+      "displayName": "Filament AI Skills",
+      "source": ".",
+      "description": "Complete Claude Code skills suite for Filament v5 + Laravel — resources, actions, infolists, exports, testing, performance auditing, error diagnosis, TDD, and more.",
+      "author": {
+        "name": "Felipe Arnold",
+        "email": "felipearnold94@gmail.com"
+      },
+      "homepage": "https://github.com/felipeArnold/filament-ai-skills",
+      "repository": "https://github.com/felipeArnold/filament-ai-skills",
+      "license": "MIT",
+      "keywords": ["filament", "laravel", "skills", "claude-code"]
+    }
+  ]
+}
